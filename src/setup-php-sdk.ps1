@@ -38,7 +38,12 @@ function Install-SDK {
 
         if (-not (Test-Path $temp) -or (Get-Item $temp).length -eq 0kb) {
             Write-Output "Downloading PHP SDK binary tools v${SdkVersion}"
-            Invoke-WebRequest $RemoteUrl -OutFile $temp
+            try {
+                Invoke-WebRequest $RemoteUrl -OutFile $temp -UseBasicParsing -ErrorAction Stop
+            } catch {
+                Write-Error "Failed to download PHP SDK from ${RemoteUrl}: $_"
+                throw
+            }
         }
 
         if (-not (Test-Path "$installDir\php-sdk")) {
@@ -68,15 +73,32 @@ function Install-DevPack {
 
     process {
         $baseUrl = "https://downloads.php.net/~windows/releases"
-        $releases = Invoke-WebRequest "${baseUrl}/releases.json" | ConvertFrom-Json
         $tsPrefix = if ($ts -eq 'ts') {'Win32'} else {'nts-Win32'}
 
-        if (-not $releases.$PhpVersion) {
-            # Download from archive using detected PHP version
-            $phpVer = & php -r 'echo PHP_VERSION;'
-            $baseUrl = "${baseUrl}/archives"
-        } else {
-            $phpVer = $releases.$PhpVersion.version
+        try {
+            $releases = Invoke-WebRequest "${baseUrl}/releases.json" -UseBasicParsing -ErrorAction Stop | ConvertFrom-Json
+
+            if (-not $releases.$PhpVersion) {
+                # Download from archive using detected PHP version
+                $phpVer = & php -r 'echo PHP_VERSION;'
+                $baseUrl = "${baseUrl}/archives"
+            } else {
+                $phpVer = $releases.$PhpVersion.version
+            }
+        } catch {
+            Write-Warning "Failed to fetch releases.json: $_"
+            Write-Output "Attempting to use detected PHP version from installed PHP"
+
+            # Try to detect PHP version from installed php
+            try {
+                $phpVer = & php -r 'echo PHP_VERSION;'
+                $baseUrl = "${baseUrl}/archives"
+            } catch {
+                # If PHP is not installed, construct version from major.minor
+                Write-Warning "PHP not found in PATH, using provided version"
+                # This will require the full version to be specified or fail
+                throw "Cannot determine PHP patch version. Please ensure PHP is installed or releases.json is accessible."
+            }
         }
 
         $devPackName = "php-devel-pack-${phpVer}-${tsPrefix}-${msvc}-${arch}.zip"
@@ -90,7 +112,12 @@ function Install-DevPack {
 
         if (-not (Test-Path $temp) -or (Get-Item $temp).length -eq 0kb) {
             Write-Output "Downloading PHP Developer Pack for PHP v${phpVer} from ${RemoteUrl}"
-            Invoke-WebRequest $RemoteUrl -OutFile $temp
+            try {
+                Invoke-WebRequest $RemoteUrl -OutFile $temp -UseBasicParsing -ErrorAction Stop
+            } catch {
+                Write-Error "Failed to download PHP Developer Pack from ${RemoteUrl}: $_"
+                throw
+            }
         }
 
         if (-not (Test-Path "$installDir\php-devpack")) {
