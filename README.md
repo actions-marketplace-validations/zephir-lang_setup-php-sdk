@@ -41,8 +41,8 @@ Setup PHP SDK action licensed under the MIT License. See the [LICENSE](./LICENSE
 
 <!-- All external links should be here -->
 [ga-link]:              https://github.com/features/actions
-[php-sdk-link]:         https://github.com/microsoft/php-sdk-binary-tools
-[php-dev-pack-link]:    https://windows.php.net/
+[php-sdk-link]:         https://github.com/php/php-sdk-binary-tools
+[php-dev-pack-link]:    https://downloads.php.net/~windows/
 
 [test badge]:           https://github.com/zephir-lang/setup-php-sdk/actions/workflows/main.yml/badge.svg
 [actions link]:         https://github.com/zephir-lang/setup-php-sdk/actions
